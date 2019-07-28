@@ -60,7 +60,17 @@ update msg model =
             ( { model | input = input }, Cmd.none )
 
         Submit ->
-            ( { model | input = "", problems = { title = model.input } :: model.problems }, Cmd.none )
+            ( { model
+                | input = ""
+                , problems =
+                    { title = model.input
+                    , lastSolvedTime = 0
+                    , remindTime = 0
+                    }
+                        :: model.problems
+              }
+            , Cmd.none
+            )
 
 
 view : Model -> Html Msg

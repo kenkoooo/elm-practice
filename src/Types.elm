@@ -5,6 +5,8 @@ import Bootstrap.Navbar as Navbar
 
 type alias ProblemCardInfo =
     { title : String
+    , lastSolvedTime : Int
+    , remindTime : Int
     }
 
 
