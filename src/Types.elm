@@ -1,4 +1,4 @@
-module Types exposing (JudgeService(..), Msg(..), ParsedProblem, ProblemCardInfo)
+module Types exposing (Msg(..), ParsedProblem(..), ProblemCardInfo)
 
 import Bootstrap.Navbar as Navbar
 
@@ -16,12 +16,7 @@ type Msg
     | Submit
 
 
-type alias ParsedProblem =
-    { id : String
-    , judge : JudgeService
-    }
-
-
-type JudgeService
-    = AtCoder
-    | Aizu
+type ParsedProblem
+    = AtCoder String String
+    | Aizu (Maybe Int)
+    | Other String

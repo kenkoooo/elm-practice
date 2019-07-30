@@ -1,35 +1,24 @@
 module UrlParser exposing (parseUrl)
 
-import Regex
-import Types exposing (JudgeService(..), ParsedProblem)
-import Utils exposing (maybeOrElse)
+import Types exposing (ParsedProblem(..))
+import Url
+import Url.Parser exposing ((</>), (<?>), Parser, map, oneOf, parse, s, string)
+import Url.Parser.Query as Query
 
 
-parseUrl : String -> Maybe ParsedProblem
+problemParser : Parser (ParsedProblem -> a) a
+problemParser =
+    oneOf
+        [ map AtCoder (s "contests" </> string </> s "tasks" </> string)
+        , map Aizu (s "onlinejudge" </> s "description.jsp" <?> Query.int "id")
+        ]
+
+
+parseUrl : String -> ParsedProblem
 parseUrl url =
-    parseAtCoderProblemUrl url
-        |> maybeOrElse (\_ -> parseAizuProblemUrl url)
+    case Url.fromString url of
+        Nothing ->
+            Other url
 
-
-parseAtCoderProblemUrl : String -> Maybe ParsedProblem
-parseAtCoderProblemUrl url =
-    parseUrlWithRegex "atcoder\\.jp/contests/[\\w_\\-]+/tasks/(.+)$" url
-        |> Maybe.map (\id -> { id = id, judge = AtCoder })
-
-
-parseAizuProblemUrl : String -> Maybe ParsedProblem
-parseAizuProblemUrl url =
-    parseUrlWithRegex "judge\\.u\\-aizu\\.ac\\.jp/onlinejudge/description\\.jsp\\?id=(.+)$" url
-        |> Maybe.map (\id -> { id = id, judge = Aizu })
-
-
-parseUrlWithRegex : String -> String -> Maybe String
-parseUrlWithRegex regex url =
-    Regex.fromString regex
-        |> Maybe.andThen
-            (\re ->
-                Regex.findAtMost 1 re url
-                    |> List.head
-                    |> Maybe.andThen (\match -> List.head match.submatches)
-                    |> Maybe.andThen (\a -> a)
-            )
+        Just v ->
+            Maybe.withDefault (Other url) (parse problemParser v)

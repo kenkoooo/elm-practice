@@ -12,7 +12,8 @@ import Html.Attributes exposing (placeholder, value)
 import Html.Events exposing (onInput, onSubmit)
 import Http
 import Model exposing (Model)
-import Types exposing (Msg(..), ProblemCardInfo)
+import Types exposing (Msg(..), ParsedProblem(..), ProblemCardInfo)
+import UrlParser
 
 
 main : Program () Model Msg
@@ -63,14 +64,23 @@ update msg model =
             ( { model
                 | input = ""
                 , problems =
-                    { title = model.input
-                    , lastSolvedTime = 0
-                    , remindTime = 0
-                    }
-                        :: model.problems
+                    getCard model.input :: model.problems
               }
             , Cmd.none
             )
+
+
+getCard : String -> ProblemCardInfo
+getCard url =
+    case UrlParser.parseUrl url of
+        AtCoder contestId problemId ->
+            { title = problemId, lastSolvedTime = 0, remindTime = 0 }
+
+        Aizu problemId ->
+            { title = "", lastSolvedTime = 0, remindTime = 0 }
+
+        Other problemUrl ->
+            { title = problemUrl, lastSolvedTime = 0, remindTime = 0 }
 
 
 view : Model -> Html Msg

@@ -2,7 +2,7 @@ module UrlParserTest exposing (suite)
 
 import Expect
 import Test exposing (Test, describe, test)
-import Types exposing (JudgeService(..))
+import Types exposing (ParsedProblem(..))
 import UrlParser
 
 
@@ -13,10 +13,15 @@ suite =
             \_ ->
                 "https://atcoder.jp/contests/tkppc4-1/tasks/tkppc4_1_h"
                     |> UrlParser.parseUrl
-                    |> Expect.equal (Just { id = "tkppc4_1_h", judge = AtCoder })
+                    |> Expect.equal (AtCoder "tkppc4-1" "tkppc4_1_h")
         , test "Parse URLs of Aizu Online Judge" <|
             \_ ->
                 "http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=3022"
                     |> UrlParser.parseUrl
-                    |> Expect.equal (Just { id = "3022", judge = Aizu })
+                    |> Expect.equal (Aizu (Just 3022))
+        , test "Parse URLs of others" <|
+            \_ ->
+                "http://example.com/"
+                    |> UrlParser.parseUrl
+                    |> Expect.equal (Other "http://example.com/")
         ]
