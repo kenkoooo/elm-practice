@@ -1,0 +1,8 @@
+language: node
+
+before_script:
+  - npm install
+
+script:
+  - elm make src/Main.elm
+  - elm-test

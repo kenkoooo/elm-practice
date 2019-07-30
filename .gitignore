@@ -1,3 +1,6 @@
 .idea/
 **/*.iml
 elm-stuff/
+node_modules/
+package-lock.json
+index.html
