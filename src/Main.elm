@@ -10,9 +10,10 @@ import Components.ProblemCard as ProblemCard
 import Html exposing (Html, input, text)
 import Html.Attributes exposing (placeholder, value)
 import Html.Events exposing (onInput, onSubmit)
-import Http
 import Model exposing (Model)
-import Types exposing (Msg(..), ParsedProblem(..), ProblemCardInfo)
+import Services.AtCoder as AtCoder
+import Task
+import Types exposing (AtCoderProblem, Msg(..), ParsedProblem(..), ProblemCardInfo)
 import UrlParser
 
 
@@ -26,29 +27,20 @@ main =
         }
 
 
-type UserInfoState
-    = Init
-    | Waiting
-    | Loaded UserInfo
-    | Failed Http.Error
-
-
-type alias UserInfo =
-    { userId : String
-    , acceptedCount : Int
-    , acceptedCountRank : Int
-    , ratedPointSum : Int
-    , ratedPointSumRank : Int
-    }
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
         ( navbarState, navbarCmd ) =
             Navbar.initialState NavbarMsg
     in
-    ( { navbarState = navbarState, problems = [], input = "" }, navbarCmd )
+    ( { navbarState = navbarState
+      , problems = []
+      , input = ""
+      , atcoderProblems = []
+      , errMsg = Nothing
+      }
+    , navbarCmd
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -61,26 +53,59 @@ update msg model =
             ( { model | input = input }, Cmd.none )
 
         Submit ->
-            ( { model
-                | input = ""
-                , problems =
-                    getCard model.input :: model.problems
-              }
-            , Cmd.none
+            case createCard model.input of
+                Just newCard ->
+                    let
+                        newCmd =
+                            case newCard.parsedProblem of
+                                AtCoder _ _ ->
+                                    if List.isEmpty model.atcoderProblems then
+                                        Task.attempt GotAtCoderProblems AtCoder.getProblems
+
+                                    else
+                                        Cmd.none
+
+                                _ ->
+                                    Cmd.none
+                    in
+                    ( { model
+                        | input = ""
+                        , problems =
+                            List.map (updateProblemCardInfo model) (newCard :: model.problems)
+                      }
+                    , newCmd
+                    )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        GotAtCoderProblems result ->
+            case result of
+                Err _ ->
+                    ( { model | errMsg = Just "Failed fetching the problem list of AtCoder" }, Cmd.none )
+
+                Ok problems ->
+                    let
+                        updatedModel =
+                            { model | atcoderProblems = problems }
+                    in
+                    ( { updatedModel | problems = List.map (updateProblemCardInfo updatedModel) updatedModel.problems }
+                    , Cmd.none
+                    )
+
+
+createCard : String -> Maybe ProblemCardInfo
+createCard url =
+    UrlParser.parseUrl url
+        |> Maybe.map
+            (\parsedProblem ->
+                { title = url
+                , lastSolvedTime = 0
+                , remindTime = 0
+                , parsedProblem = parsedProblem
+                , url = url
+                }
             )
-
-
-getCard : String -> ProblemCardInfo
-getCard url =
-    case UrlParser.parseUrl url of
-        AtCoder contestId problemId ->
-            { title = problemId, lastSolvedTime = 0, remindTime = 0 }
-
-        Aizu problemId ->
-            { title = "", lastSolvedTime = 0, remindTime = 0 }
-
-        Other problemUrl ->
-            { title = problemUrl, lastSolvedTime = 0, remindTime = 0 }
 
 
 view : Model -> Html Msg
@@ -111,3 +136,23 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Navbar.subscriptions model.navbarState NavbarMsg
+
+
+updateProblemCardInfo : Model -> ProblemCardInfo -> ProblemCardInfo
+updateProblemCardInfo model info =
+    case info.parsedProblem of
+        AtCoder _ problemId ->
+            let
+                x =
+                    List.filter (\problem -> problem.id == problemId) model.atcoderProblems
+                        |> List.head
+            in
+            case x of
+                Just p ->
+                    { info | title = p.title }
+
+                Nothing ->
+                    info
+
+        _ ->
+            info

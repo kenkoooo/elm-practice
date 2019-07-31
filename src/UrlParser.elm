@@ -14,11 +14,7 @@ problemParser =
         ]
 
 
-parseUrl : String -> ParsedProblem
+parseUrl : String -> Maybe ParsedProblem
 parseUrl url =
-    case Url.fromString url of
-        Nothing ->
-            Other url
-
-        Just v ->
-            Maybe.withDefault (Other url) (parse problemParser v)
+    Url.fromString url
+        |> Maybe.map (\u -> Maybe.withDefault (Other url) (parse problemParser u))

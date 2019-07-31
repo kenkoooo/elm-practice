@@ -1,5 +1,6 @@
 module Components.Navbar exposing (initialState, subscriptions, view)
 
+import Bootstrap.Carousel exposing (Msg)
 import Bootstrap.Navbar as Navbar
 import Html exposing (Html, text)
 import Html.Attributes exposing (href)
