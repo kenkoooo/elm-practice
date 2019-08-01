@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Bootstrap.CDN as CDN
 import Bootstrap.Form as Form
@@ -10,11 +10,18 @@ import Components.ProblemCard as ProblemCard
 import Html exposing (Html, input, text)
 import Html.Attributes exposing (placeholder, value)
 import Html.Events exposing (onInput, onSubmit)
+import Json.Decode exposing (Value)
 import Model exposing (Model)
 import Services.AtCoder as AtCoder
 import Task
 import Types exposing (AtCoderProblem, Msg(..), ParsedProblem(..), ProblemCardInfo)
 import UrlParser
+
+
+port storeCache : Maybe Value -> Cmd msg
+
+
+port onStoreChange : (Value -> msg) -> Sub msg
 
 
 main : Program () Model Msg
