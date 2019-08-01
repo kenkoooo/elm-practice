@@ -24,6 +24,7 @@ type Msg
     | Input String
     | Submit
     | GotAtCoderProblems (Result Error (List AtCoderProblem))
+    | ReceiveLocalStorage String
 
 
 type Error

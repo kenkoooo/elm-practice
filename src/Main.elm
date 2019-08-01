@@ -10,7 +10,6 @@ import Components.ProblemCard as ProblemCard
 import Html exposing (Html, input, text)
 import Html.Attributes exposing (placeholder, value)
 import Html.Events exposing (onInput, onSubmit)
-import Json.Decode exposing (Value)
 import Model exposing (Model)
 import Services.AtCoder as AtCoder
 import Task
@@ -18,13 +17,13 @@ import Types exposing (AtCoderProblem, Msg(..), ParsedProblem(..), ProblemCardIn
 import UrlParser
 
 
-port storeCache : Maybe Value -> Cmd msg
+port storeCache : String -> Cmd msg
 
 
-port onStoreChange : (Value -> msg) -> Sub msg
+port onStoreChange : (String -> msg) -> Sub msg
 
 
-main : Program () Model Msg
+main : Program (Maybe String) Model Msg
 main =
     Browser.element
         { init = init
@@ -34,7 +33,7 @@ main =
         }
 
 
-init : () -> ( Model, Cmd Msg )
+init : Maybe String -> ( Model, Cmd Msg )
 init _ =
     let
         ( navbarState, navbarCmd ) =
@@ -80,7 +79,7 @@ update msg model =
                         , problems =
                             List.map (updateProblemCardInfo model) (newCard :: model.problems)
                       }
-                    , newCmd
+                    , Cmd.batch [ newCmd, storeCache "a" ]
                     )
 
                 Nothing ->
@@ -99,6 +98,9 @@ update msg model =
                     ( { updatedModel | problems = List.map (updateProblemCardInfo updatedModel) updatedModel.problems }
                     , Cmd.none
                     )
+
+        ReceiveLocalStorage _ ->
+            ( model, Cmd.none )
 
 
 createCard : String -> Maybe ProblemCardInfo
@@ -142,7 +144,7 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Navbar.subscriptions model.navbarState NavbarMsg
+    Sub.batch [ Navbar.subscriptions model.navbarState NavbarMsg, onStoreChange ReceiveLocalStorage ]
 
 
 updateProblemCardInfo : Model -> ProblemCardInfo -> ProblemCardInfo

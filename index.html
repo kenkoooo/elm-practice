@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Conduit</title>
+    <script src="elm.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script>
+    const storageKey = "store";
+    const flags = localStorage.getItem(storageKey);
+    const app = Elm.Main.init({ flags: flags, node: document.getElementById("root") });
+    app.ports.storeCache.subscribe((val) => {
+        localStorage.setItem(storageKey, JSON.stringify(val));
+        // Report that the new session was stored succesfully.
+        setTimeout(function () {
+            app.ports.onStoreChange.send(val);
+        }, 0);
+    });
+    // Whenever localStorage changes in another tab, report it if necessary.
+    window.addEventListener("storage", function (event) {
+        if (event.storageArea === localStorage && event.key === storageKey) {
+            app.ports.onStoreChange.send(event.newValue);
+        }
+    }, false);
+</script>
+</body>
+</html>
